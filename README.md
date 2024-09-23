@@ -12,6 +12,8 @@ Assumes one identity per-database session.
 
 Does not support [policy conditions](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html).
 
+Only includes S3 actions (PRs welcome see *iam/s3.pl*).
+
 Facts
 -----
 * `changelog/2` represents adding/deleting a policy.
