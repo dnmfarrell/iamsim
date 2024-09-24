@@ -2,6 +2,8 @@ AWS IAM Simulator
 =================
 A Prolog module that stores IAM policies and actions to simulate permissions.
 
+For more info about the project background and rationale, see this [blog post](https://blog.dnmfarrell.com/post/simulating-aws-iam-with-prolog/).
+
 Tested with [SWI-Prolog](https://www.swi-prolog.org/).
 
 Limitations
