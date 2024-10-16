@@ -37,8 +37,8 @@
                 arn_partition/1,
                 arn_service//1,
                 arn_service/1,
-                arn_region//1,
-                arn_region/1,
+                arn_region//2,
+                arn_partition_region/2,
                 arn_acc_id//1,
                 arn_resource//1
                ]).
@@ -48,14 +48,14 @@
 :- use_module(library(clpz)).
 :- use_module(library(dcgs)).
 
-arn([A,B,C,D,E,F]) -->
+arn(arn(A,B,C,D,E,F)) -->
   arn_scheme(A),
   ":",
   arn_partition(B),
   ":",
   arn_service(C),
   ":",
-  arn_region(D),
+  arn_region(B,D),
   ":",
   arn_acc_id(E),
   ":",
@@ -72,16 +72,16 @@ arn_service(S) --> arn_any(S), { arn_service(S) }.
 
 arn_parsing, [A] --> [A], { nonvar(A) }.
 
-arn_region(R) -->
+arn_region(P, R) -->
   (  arn_parsing ->
-     arn_region_lazy(R)
-  ;  arn_region_greedy(R) % prefer non-empty solutions
+     arn_region_lazy(P,R)
+  ;  arn_region_greedy(P,R) % prefer non-empty solutions
   ).
 
 arn_region_lazy("") --> "".
-arn_region_lazy(R)  --> arn_any(R), { arn_region(R) }.
+arn_region_lazy(P,R)  --> arn_any(R), { arn_partition_region(P,R) }.
 
-arn_region_greedy(R)  --> arn_any(R), { arn_region(R) }.
+arn_region_greedy(P,R)  --> arn_any(R), { arn_partition_region(P,R) }.
 arn_region_greedy("") --> "".
 
 arn_acc_id(A) -->
@@ -151,31 +151,31 @@ arn_partition("aws").
 arn_partition("aws-cn").
 arn_partition("aws-us-gov").
 
-arn_region("ap-southeast-3").
-arn_region("ap-southeast-4").
-arn_region("ap-southeast-5").
-arn_region("ca-central-1").
-arn_region("ca-west-1").
-arn_region("cn-north-1").
-arn_region("cn-northwest-1").
-arn_region("eu-central-1").
-arn_region("eu-central-2").
-arn_region("eu-north-1").
-arn_region("eu-south-1").
-arn_region("eu-south-2").
-arn_region("eu-west-1").
-arn_region("eu-west-2").
-arn_region("eu-west-3").
-arn_region("il-central-1").
-arn_region("me-central-1").
-arn_region("me-south-1").
-arn_region("sa-east-1").
-arn_region("us-east-1").
-arn_region("us-east-2").
-arn_region("us-gov-east-1").
-arn_region("us-gov-west-1").
-arn_region("us-west-1").
-arn_region("us-west-2").
+arn_partition_region("aws", "ap-southeast-3").
+arn_partition_region("aws", "ap-southeast-4").
+arn_partition_region("aws", "ap-southeast-5").
+arn_partition_region("aws", "ca-central-1").
+arn_partition_region("aws", "ca-west-1").
+arn_partition_region("aws-cn", "cn-north-1").
+arn_partition_region("aws-cn", "cn-northwest-1").
+arn_partition_region("aws", "eu-central-1").
+arn_partition_region("aws", "eu-central-2").
+arn_partition_region("aws", "eu-north-1").
+arn_partition_region("aws", "eu-south-1").
+arn_partition_region("aws", "eu-south-2").
+arn_partition_region("aws", "eu-west-1").
+arn_partition_region("aws", "eu-west-2").
+arn_partition_region("aws", "eu-west-3").
+arn_partition_region("aws", "il-central-1").
+arn_partition_region("aws", "me-central-1").
+arn_partition_region("aws", "me-south-1").
+arn_partition_region("aws", "sa-east-1").
+arn_partition_region("aws", "us-east-1").
+arn_partition_region("aws", "us-east-2").
+arn_partition_region("aws-us-gov", "us-gov-east-1").
+arn_partition_region("aws-us-gov", "us-gov-west-1").
+arn_partition_region("aws", "us-west-1").
+arn_partition_region("aws", "us-west-2").
 
 arn_service("a2c").
 arn_service("a4b").
