@@ -31,22 +31,22 @@
 */
 
 :- module(arn, [
-                arn//3,
-                arn_scheme//3,
-                arn_partition//3,
+                arn//1,
+                arn_scheme//1,
+                arn_partition//1,
                 arn_partition/1,
-                arn_service//3,
+                arn_service//1,
                 arn_service/1,
-                arn_region//3,
+                arn_region//1,
                 arn_region/1,
-                arn_acc_id//3,
-                arn_resource//3
+                arn_acc_id//1,
+                arn_resource//1
                ]).
 
 :- set_prolog_flag(double_quotes, chars).
+:- use_module(library(between)).
 :- use_module(library(clpz)).
 :- use_module(library(dcgs)).
-:- use_module(library(between)).
 
 arn([A,B,C,D,E,F]) -->
   arn_scheme(A),
