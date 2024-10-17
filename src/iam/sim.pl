@@ -11,7 +11,7 @@
                   ]).
 
 :- use_module(library(lists), [append/3]).
-:- use_module('wildcard', [patt//1]).
+:- use_module('../wildcard', [patt//1]).
 
 :- dynamic(policy/5).
 :- dynamic(action/1).

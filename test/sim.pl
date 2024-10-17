@@ -1,7 +1,7 @@
 :- use_module(library(dcgs)).
 :- use_module(library(format)).
-:- use_module('../iam/sim').
-:- use_module('../iam/s3').
+:- use_module('../src/iam/sim').
+:- use_module('../src/iam/s3').
 
 :- dynamic(policy/5).
 

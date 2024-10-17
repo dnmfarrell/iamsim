@@ -1,4 +1,4 @@
-:- module(iams3, [action/1]).
+:- module(iam_s3, [action/1]).
 
 :- dynamic(action/1).
 action('s3:AbortMultipartUpload').

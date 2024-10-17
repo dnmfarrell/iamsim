@@ -14,7 +14,7 @@ Assumes one principal per-database session.
 
 Does not support [policy conditions](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html).
 
-Only includes S3 actions (PRs welcome see *iam/s3.pl*).
+Only includes S3 actions (PRs welcome see *src/iam/s3.pl*).
 
 Facts
 -----
@@ -33,7 +33,7 @@ Predicates
 
 Example
 -------
-    $ scryer-prolog -f iam/sim.pl iam/s3.pl
+    $ scryer-prolog -f src/iam/sim.pl src/iam/s3.pl
     ?- % add a new policy granting s3:Get* on /public/*
     policy_add(identity, 's3-get-all', allow, 's3:Get*', '/public/*').
        true.
