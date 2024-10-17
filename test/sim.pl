@@ -1,3 +1,4 @@
+:- set_prolog_flag(double_quotes, chars).
 :- use_module(library(dcgs)).
 :- use_module(library(format)).
 :- use_module('../src/iam/sim').

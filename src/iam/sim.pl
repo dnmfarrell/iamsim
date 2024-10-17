@@ -1,14 +1,14 @@
-:- module(iamsim, [
-                   action/1,
-                   can/2,
-                   all/2,
-                   why/3,
-                   fix/3,
-                   policy/5,
-                   policy_add/5,
-                   policy_remove/5,
-                   policy_match/7
-                  ]).
+:- module(iam_sim, [
+                    action/1,
+                    can/2,
+                    all/2,
+                    why/3,
+                    fix/3,
+                    policy/5,
+                    policy_add/5,
+                    policy_remove/5,
+                    policy_match/7
+                   ]).
 
 :- use_module(library(lists), [append/3]).
 :- use_module('../wildcard', [patt//1]).

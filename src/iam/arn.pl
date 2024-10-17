@@ -30,26 +30,26 @@
 
 */
 
-:- module(arn, [
-                arn//1,
-                arn_scheme//1,
-                arn_partition//1,
-                arn_partition/1,
-                arn_service//1,
-                arn_service/1,
-                arn_region//2,
-                arn_partition_region/2,
-                arn_acc_id//1,
-                arn_resource//1
-               ]).
+:- module(iam_arn, [
+                    arn//1,
+                    arn_scheme//1,
+                    arn_partition//1,
+                    arn_partition/1,
+                    arn_service//1,
+                    arn_service/1,
+                    arn_region//2,
+                    arn_partition_region/2,
+                    arn_acc_id//1,
+                    arn_resource//1
+                   ]).
 
 :- set_prolog_flag(double_quotes, chars).
 :- use_module(library(between)).
 :- use_module(library(clpz)).
 :- use_module(library(dcgs)).
 
-arn(arn(A,B,C,D,E,F)) -->
-  arn_scheme(A),
+arn(arn(B,C,D,E,F)) -->
+  arn_scheme(_),
   ":",
   arn_partition(B),
   ":",
@@ -72,17 +72,17 @@ arn_service(S) --> arn_any(S), { arn_service(S) }.
 
 arn_parsing, [A] --> [A], { nonvar(A) }.
 
-arn_region(P, R) -->
+arn_region(P,R) -->
   (  arn_parsing ->
      arn_region_lazy(P,R)
   ;  arn_region_greedy(P,R) % prefer non-empty solutions
   ).
 
-arn_region_lazy("") --> "".
+arn_region_lazy(_,"") --> "".
 arn_region_lazy(P,R)  --> arn_any(R), { arn_partition_region(P,R) }.
 
 arn_region_greedy(P,R)  --> arn_any(R), { arn_partition_region(P,R) }.
-arn_region_greedy("") --> "".
+arn_region_greedy("",_) --> "".
 
 arn_acc_id(A) -->
   (  arn_parsing ->
@@ -190,16 +190,15 @@ arn_service("amplifybackend").
 arn_service("amplifyuibuilder").
 arn_service("aoss").
 arn_service("apigateway").
-arn_service("apigateway").
+arn_service("app-integrations").
 arn_service("appconfig").
 arn_service("appfabric").
 arn_service("appflow").
-arn_service("app-integrations").
 arn_service("application-autoscaling").
 arn_service("application-cost-profiler").
-arn_service("applicationinsights").
 arn_service("application-signals").
 arn_service("application-transformation").
+arn_service("applicationinsights").
 arn_service("appmesh").
 arn_service("appmesh-preview").
 arn_service("apprunner").
@@ -215,19 +214,10 @@ arn_service("athena").
 arn_service("auditmanager").
 arn_service("autoscaling").
 arn_service("autoscaling-plans").
-arn_service("awsconnector").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
-arn_service("aws-marketplace").
 arn_service("aws-marketplace").
 arn_service("aws-marketplace-management").
 arn_service("aws-portal").
+arn_service("awsconnector").
 arn_service("b2bi").
 arn_service("backup").
 arn_service("backup-gateway").
@@ -249,7 +239,6 @@ arn_service("cleanrooms").
 arn_service("cleanrooms-ml").
 arn_service("cloud9").
 arn_service("clouddirectory").
-arn_service("cloudformation").
 arn_service("cloudformation").
 arn_service("cloudfront").
 arn_service("cloudfront-keyvaluestore").
@@ -323,11 +312,10 @@ arn_service("ecr-public").
 arn_service("ecs").
 arn_service("eks").
 arn_service("eks-auth").
+arn_service("elastic-inference").
 arn_service("elasticache").
 arn_service("elasticbeanstalk").
 arn_service("elasticfilesystem").
-arn_service("elastic-inference").
-arn_service("elasticloadbalancing").
 arn_service("elasticloadbalancing").
 arn_service("elasticmapreduce").
 arn_service("elastictranscoder").
@@ -359,7 +347,6 @@ arn_service("globalaccelerator").
 arn_service("glue").
 arn_service("grafana").
 arn_service("greengrass").
-arn_service("greengrass").
 arn_service("groundstation").
 arn_service("groundtruthlabeling").
 arn_service("guardduty").
@@ -367,21 +354,21 @@ arn_service("health").
 arn_service("healthlake").
 arn_service("honeycode").
 arn_service("iam").
+arn_service("identity-sync").
 arn_service("identitystore").
 arn_service("identitystore-auth").
-arn_service("identity-sync").
 arn_service("imagebuilder").
 arn_service("importexport").
 arn_service("inspector").
-arn_service("inspector2").
 arn_service("inspector-scan").
+arn_service("inspector2").
 arn_service("internetmonitor").
 arn_service("invoicing").
 arn_service("iot").
+arn_service("iot-device-tester").
 arn_service("iot1click").
 arn_service("iotanalytics").
 arn_service("iotdeviceadvisor").
-arn_service("iot-device-tester").
 arn_service("iotevents").
 arn_service("iotfleethub").
 arn_service("iotfleetwise").
@@ -400,13 +387,11 @@ arn_service("kendra").
 arn_service("kendra-ranking").
 arn_service("kinesis").
 arn_service("kinesisanalytics").
-arn_service("kinesisanalytics").
 arn_service("kinesisvideo").
 arn_service("kms").
 arn_service("lakeformation").
 arn_service("lambda").
 arn_service("launchwizard").
-arn_service("lex").
 arn_service("lex").
 arn_service("license-manager").
 arn_service("license-manager-linux-subscriptions").
@@ -429,8 +414,8 @@ arn_service("mediaconvert").
 arn_service("mediaimport").
 arn_service("medialive").
 arn_service("mediapackage").
-arn_service("mediapackagev2").
 arn_service("mediapackage-vod").
+arn_service("mediapackagev2").
 arn_service("mediastore").
 arn_service("mediatailor").
 arn_service("medical-imaging").
@@ -500,17 +485,17 @@ arn_service("rhelkb").
 arn_service("robomaker").
 arn_service("rolesanywhere").
 arn_service("route53").
-arn_service("route53domains").
-arn_service("route53profiles").
 arn_service("route53-recovery-cluster").
 arn_service("route53-recovery-control-config").
 arn_service("route53-recovery-readiness").
+arn_service("route53domains").
+arn_service("route53profiles").
 arn_service("route53resolver").
 arn_service("rum").
 arn_service("s3").
-arn_service("s3express").
 arn_service("s3-object-lambda").
 arn_service("s3-outposts").
+arn_service("s3express").
 arn_service("sagemaker").
 arn_service("sagemaker-geospatial").
 arn_service("sagemaker-groundtruth-synthetic").
@@ -529,18 +514,14 @@ arn_service("servicediscovery").
 arn_service("serviceextract").
 arn_service("servicequotas").
 arn_service("ses").
-arn_service("ses").
-arn_service("ses").
-arn_service("ses").
 arn_service("shield").
 arn_service("signer").
 arn_service("signin").
 arn_service("simspaceweaver").
 arn_service("sms").
 arn_service("sms-voice").
-arn_service("sms-voice").
-arn_service("snowball").
 arn_service("snow-device-management").
+arn_service("snowball").
 arn_service("sns").
 arn_service("sqlworkbench").
 arn_service("sqs").
@@ -548,9 +529,9 @@ arn_service("ssm").
 arn_service("ssm-contacts").
 arn_service("ssm-guiconnect").
 arn_service("ssm-incidents").
-arn_service("ssmmessages").
 arn_service("ssm-quicksetup").
 arn_service("ssm-sap").
+arn_service("ssmmessages").
 arn_service("sso").
 arn_service("sso-directory").
 arn_service("sso-oauth").
