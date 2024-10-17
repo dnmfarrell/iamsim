@@ -1,2 +1,2 @@
 #!/bin/bash
-swipl -g run_tests -t halt 'test/tests.pl'
+scryer-prolog -f 'test/sim.pl'

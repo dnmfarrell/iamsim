@@ -1,159 +1,160 @@
-:- use_module(sim, []).
+:- module(iams3, [action/1]).
 
-:- assertz(action('s3:AbortMultipartUpload')).
-:- assertz(action('s3:BypassGovernanceRetention')).
-:- assertz(action('s3:CreateAccessPoint')).
-:- assertz(action('s3:CreateAccessPointForObjectLambda')).
-:- assertz(action('s3:CreateBucket')).
-:- assertz(action('s3:CreateJob')).
-:- assertz(action('s3:CreateMultiRegionAccessPoint')).
-:- assertz(action('s3:DeleteAccessPoint')).
-:- assertz(action('s3:DeleteAccessPointForObjectLambda')).
-:- assertz(action('s3:DeleteAccessPointPolicy')).
-:- assertz(action('s3:DeleteAccessPointPolicyForObjectLambda')).
-:- assertz(action('s3:DeleteBucket')).
-:- assertz(action('s3:DeleteBucketPolicy')).
-:- assertz(action('s3:DeleteBucketWebsite')).
-:- assertz(action('s3:DeleteIntelligentTieringConfiguration')).
-:- assertz(action('s3:DeleteJobTagging')).
-:- assertz(action('s3:DeleteMultiRegionAccessPoint')).
-:- assertz(action('s3:DeleteObject')).
-:- assertz(action('s3:DeleteObjectTagging')).
-:- assertz(action('s3:DeleteObjectVersion')).
-:- assertz(action('s3:DeleteObjectVersionTagging')).
-:- assertz(action('s3:DeleteStorageLensConfiguration')).
-:- assertz(action('s3:DeleteStorageLensConfigurationTagging')).
-:- assertz(action('s3:DescribeJob')).
-:- assertz(action('s3:DescribeMultiRegionAccessPointOperation')).
-:- assertz(action('s3:GetAccelerateConfiguration')).
-:- assertz(action('s3:GetAccessPoint')).
-:- assertz(action('s3:GetAccessPointConfigurationForObjectLambda')).
-:- assertz(action('s3:GetAccessPointForObjectLambda')).
-:- assertz(action('s3:GetAccessPointPolicy')).
-:- assertz(action('s3:GetAccessPointPolicyForObjectLambda')).
-:- assertz(action('s3:GetAccessPointPolicyStatus')).
-:- assertz(action('s3:GetAccessPointPolicyStatusForObjectLambda')).
-:- assertz(action('s3:GetAccountPublicAccessBlock')).
-:- assertz(action('s3:GetAnalyticsConfiguration')).
-:- assertz(action('s3:GetBucketAcl')).
-:- assertz(action('s3:GetBucketCORS')).
-:- assertz(action('s3:GetBucketLocation')).
-:- assertz(action('s3:GetBucketLogging')).
-:- assertz(action('s3:GetBucketNotification')).
-:- assertz(action('s3:GetBucketObjectLockConfiguration')).
-:- assertz(action('s3:GetBucketOwnershipControls')).
-:- assertz(action('s3:GetBucketPolicy')).
-:- assertz(action('s3:GetBucketPolicyStatus')).
-:- assertz(action('s3:GetBucketPublicAccessBlock')).
-:- assertz(action('s3:GetBucketRequestPayment')).
-:- assertz(action('s3:GetBucketTagging')).
-:- assertz(action('s3:GetBucketVersioning')).
-:- assertz(action('s3:GetBucketWebsite')).
-:- assertz(action('s3:GetEncryptionConfiguration')).
-:- assertz(action('s3:GetIntelligentTieringConfiguration')).
-:- assertz(action('s3:GetInventoryConfiguration')).
-:- assertz(action('s3:GetJobTagging')).
-:- assertz(action('s3:GetLifecycleConfiguration')).
-:- assertz(action('s3:GetMetricsConfiguration')).
-:- assertz(action('s3:GetMultiRegionAccessPoint')).
-:- assertz(action('s3:GetMultiRegionAccessPointPolicy')).
-:- assertz(action('s3:GetMultiRegionAccessPointPolicyStatus')).
-:- assertz(action('s3:GetMultiRegionAccessPointRoutes')).
-:- assertz(action('s3:GetObject')).
-:- assertz(action('s3:GetObjectAcl')).
-:- assertz(action('s3:GetObjectAttributes')).
-:- assertz(action('s3:GetObjectLegalHold')).
-:- assertz(action('s3:GetObjectRetention')).
-:- assertz(action('s3:GetObjectTagging')).
-:- assertz(action('s3:GetObjectTorrent')).
-:- assertz(action('s3:GetObjectVersion')).
-:- assertz(action('s3:GetObjectVersionAcl')).
-:- assertz(action('s3:GetObjectVersionAttributes')).
-:- assertz(action('s3:GetObjectVersionForReplication')).
-:- assertz(action('s3:GetObjectVersionTagging')).
-:- assertz(action('s3:GetObjectVersionTorrent')).
-:- assertz(action('s3:GetReplicationConfiguration')).
-:- assertz(action('s3:GetStorageLensConfiguration')).
-:- assertz(action('s3:GetStorageLensConfigurationTagging')).
-:- assertz(action('s3:GetStorageLensDashboard')).
-:- assertz(action('s3:InitiateReplication')).
-:- assertz(action('s3:ListAccessPoints')).
-:- assertz(action('s3:ListAccessPointsForObjectLambda')).
-:- assertz(action('s3:ListAllMyBuckets')).
-:- assertz(action('s3:ListBucket')).
-:- assertz(action('s3:ListBucketMultipartUploads')).
-:- assertz(action('s3:ListBucketVersions')).
-:- assertz(action('s3:ListJobs')).
-:- assertz(action('s3:ListMultipartUploadParts')).
-:- assertz(action('s3:ListMultiRegionAccessPoints')).
-:- assertz(action('s3:ListStorageLensConfigurations')).
-:- assertz(action('s3-object-lambda:AbortMultipartUpload')).
-:- assertz(action('s3-object-lambda:DeleteObject')).
-:- assertz(action('s3-object-lambda:DeleteObjectTagging')).
-:- assertz(action('s3-object-lambda:DeleteObjectVersion')).
-:- assertz(action('s3-object-lambda:DeleteObjectVersionTagging')).
-:- assertz(action('s3-object-lambda:GetObject')).
-:- assertz(action('s3-object-lambda:GetObjectAcl')).
-:- assertz(action('s3-object-lambda:GetObjectLegalHold')).
-:- assertz(action('s3-object-lambda:GetObjectRetention')).
-:- assertz(action('s3-object-lambda:GetObjectTagging')).
-:- assertz(action('s3-object-lambda:GetObjectVersion')).
-:- assertz(action('s3-object-lambda:GetObjectVersionAcl')).
-:- assertz(action('s3-object-lambda:GetObjectVersionTagging')).
-:- assertz(action('s3-object-lambda:ListBucket')).
-:- assertz(action('s3-object-lambda:ListBucketMultipartUploads')).
-:- assertz(action('s3-object-lambda:ListBucketVersions')).
-:- assertz(action('s3-object-lambda:ListMultipartUploadParts')).
-:- assertz(action('s3-object-lambda:PutObject')).
-:- assertz(action('s3-object-lambda:PutObjectAcl')).
-:- assertz(action('s3-object-lambda:PutObjectLegalHold')).
-:- assertz(action('s3-object-lambda:PutObjectRetention')).
-:- assertz(action('s3-object-lambda:PutObjectTagging')).
-:- assertz(action('s3-object-lambda:PutObjectVersionAcl')).
-:- assertz(action('s3-object-lambda:PutObjectVersionTagging')).
-:- assertz(action('s3-object-lambda:RestoreObject')).
-:- assertz(action('s3-object-lambda:WriteGetObjectResponse')).
-:- assertz(action('s3:ObjectOwnerOverrideToBucketOwner')).
-:- assertz(action('s3:PutAccelerateConfiguration')).
-:- assertz(action('s3:PutAccessPointConfigurationForObjectLambda')).
-:- assertz(action('s3:PutAccessPointPolicy')).
-:- assertz(action('s3:PutAccessPointPolicyForObjectLambda')).
-:- assertz(action('s3:PutAccessPointPublicAccessBlock')).
-:- assertz(action('s3:PutAccountPublicAccessBlock')).
-:- assertz(action('s3:PutAnalyticsConfiguration')).
-:- assertz(action('s3:PutBucketAcl')).
-:- assertz(action('s3:PutBucketCORS')).
-:- assertz(action('s3:PutBucketLogging')).
-:- assertz(action('s3:PutBucketNotification')).
-:- assertz(action('s3:PutBucketObjectLockConfiguration')).
-:- assertz(action('s3:PutBucketOwnershipControls')).
-:- assertz(action('s3:PutBucketPolicy')).
-:- assertz(action('s3:PutBucketPublicAccessBlock')).
-:- assertz(action('s3:PutBucketRequestPayment')).
-:- assertz(action('s3:PutBucketTagging')).
-:- assertz(action('s3:PutBucketVersioning')).
-:- assertz(action('s3:PutBucketWebsite')).
-:- assertz(action('s3:PutEncryptionConfiguration')).
-:- assertz(action('s3:PutIntelligentTieringConfiguration')).
-:- assertz(action('s3:PutInventoryConfiguration')).
-:- assertz(action('s3:PutJobTagging')).
-:- assertz(action('s3:PutLifecycleConfiguration')).
-:- assertz(action('s3:PutMetricsConfiguration')).
-:- assertz(action('s3:PutMultiRegionAccessPointPolicy')).
-:- assertz(action('s3:PutObject')).
-:- assertz(action('s3:PutObjectAcl')).
-:- assertz(action('s3:PutObjectLegalHold')).
-:- assertz(action('s3:PutObjectRetention')).
-:- assertz(action('s3:PutObjectTagging')).
-:- assertz(action('s3:PutObjectVersionAcl')).
-:- assertz(action('s3:PutObjectVersionTagging')).
-:- assertz(action('s3:PutReplicationConfiguration')).
-:- assertz(action('s3:PutStorageLensConfiguration')).
-:- assertz(action('s3:PutStorageLensConfigurationTagging')).
-:- assertz(action('s3:ReplicateDelete')).
-:- assertz(action('s3:ReplicateObject')).
-:- assertz(action('s3:ReplicateTags')).
-:- assertz(action('s3:RestoreObject')).
-:- assertz(action('s3:SubmitMultiRegionAccessPointRoutes')).
-:- assertz(action('s3:UpdateJobPriority')).
-:- assertz(action('s3:UpdateJobStatus')).
+:- dynamic(action/1).
+action('s3:AbortMultipartUpload').
+action('s3:BypassGovernanceRetention').
+action('s3:CreateAccessPoint').
+action('s3:CreateAccessPointForObjectLambda').
+action('s3:CreateBucket').
+action('s3:CreateJob').
+action('s3:CreateMultiRegionAccessPoint').
+action('s3:DeleteAccessPoint').
+action('s3:DeleteAccessPointForObjectLambda').
+action('s3:DeleteAccessPointPolicy').
+action('s3:DeleteAccessPointPolicyForObjectLambda').
+action('s3:DeleteBucket').
+action('s3:DeleteBucketPolicy').
+action('s3:DeleteBucketWebsite').
+action('s3:DeleteIntelligentTieringConfiguration').
+action('s3:DeleteJobTagging').
+action('s3:DeleteMultiRegionAccessPoint').
+action('s3:DeleteObject').
+action('s3:DeleteObjectTagging').
+action('s3:DeleteObjectVersion').
+action('s3:DeleteObjectVersionTagging').
+action('s3:DeleteStorageLensConfiguration').
+action('s3:DeleteStorageLensConfigurationTagging').
+action('s3:DescribeJob').
+action('s3:DescribeMultiRegionAccessPointOperation').
+action('s3:GetAccelerateConfiguration').
+action('s3:GetAccessPoint').
+action('s3:GetAccessPointConfigurationForObjectLambda').
+action('s3:GetAccessPointForObjectLambda').
+action('s3:GetAccessPointPolicy').
+action('s3:GetAccessPointPolicyForObjectLambda').
+action('s3:GetAccessPointPolicyStatus').
+action('s3:GetAccessPointPolicyStatusForObjectLambda').
+action('s3:GetAccountPublicAccessBlock').
+action('s3:GetAnalyticsConfiguration').
+action('s3:GetBucketAcl').
+action('s3:GetBucketCORS').
+action('s3:GetBucketLocation').
+action('s3:GetBucketLogging').
+action('s3:GetBucketNotification').
+action('s3:GetBucketObjectLockConfiguration').
+action('s3:GetBucketOwnershipControls').
+action('s3:GetBucketPolicy').
+action('s3:GetBucketPolicyStatus').
+action('s3:GetBucketPublicAccessBlock').
+action('s3:GetBucketRequestPayment').
+action('s3:GetBucketTagging').
+action('s3:GetBucketVersioning').
+action('s3:GetBucketWebsite').
+action('s3:GetEncryptionConfiguration').
+action('s3:GetIntelligentTieringConfiguration').
+action('s3:GetInventoryConfiguration').
+action('s3:GetJobTagging').
+action('s3:GetLifecycleConfiguration').
+action('s3:GetMetricsConfiguration').
+action('s3:GetMultiRegionAccessPoint').
+action('s3:GetMultiRegionAccessPointPolicy').
+action('s3:GetMultiRegionAccessPointPolicyStatus').
+action('s3:GetMultiRegionAccessPointRoutes').
+action('s3:GetObject').
+action('s3:GetObjectAcl').
+action('s3:GetObjectAttributes').
+action('s3:GetObjectLegalHold').
+action('s3:GetObjectRetention').
+action('s3:GetObjectTagging').
+action('s3:GetObjectTorrent').
+action('s3:GetObjectVersion').
+action('s3:GetObjectVersionAcl').
+action('s3:GetObjectVersionAttributes').
+action('s3:GetObjectVersionForReplication').
+action('s3:GetObjectVersionTagging').
+action('s3:GetObjectVersionTorrent').
+action('s3:GetReplicationConfiguration').
+action('s3:GetStorageLensConfiguration').
+action('s3:GetStorageLensConfigurationTagging').
+action('s3:GetStorageLensDashboard').
+action('s3:InitiateReplication').
+action('s3:ListAccessPoints').
+action('s3:ListAccessPointsForObjectLambda').
+action('s3:ListAllMyBuckets').
+action('s3:ListBucket').
+action('s3:ListBucketMultipartUploads').
+action('s3:ListBucketVersions').
+action('s3:ListJobs').
+action('s3:ListMultipartUploadParts').
+action('s3:ListMultiRegionAccessPoints').
+action('s3:ListStorageLensConfigurations').
+action('s3-object-lambda:AbortMultipartUpload').
+action('s3-object-lambda:DeleteObject').
+action('s3-object-lambda:DeleteObjectTagging').
+action('s3-object-lambda:DeleteObjectVersion').
+action('s3-object-lambda:DeleteObjectVersionTagging').
+action('s3-object-lambda:GetObject').
+action('s3-object-lambda:GetObjectAcl').
+action('s3-object-lambda:GetObjectLegalHold').
+action('s3-object-lambda:GetObjectRetention').
+action('s3-object-lambda:GetObjectTagging').
+action('s3-object-lambda:GetObjectVersion').
+action('s3-object-lambda:GetObjectVersionAcl').
+action('s3-object-lambda:GetObjectVersionTagging').
+action('s3-object-lambda:ListBucket').
+action('s3-object-lambda:ListBucketMultipartUploads').
+action('s3-object-lambda:ListBucketVersions').
+action('s3-object-lambda:ListMultipartUploadParts').
+action('s3-object-lambda:PutObject').
+action('s3-object-lambda:PutObjectAcl').
+action('s3-object-lambda:PutObjectLegalHold').
+action('s3-object-lambda:PutObjectRetention').
+action('s3-object-lambda:PutObjectTagging').
+action('s3-object-lambda:PutObjectVersionAcl').
+action('s3-object-lambda:PutObjectVersionTagging').
+action('s3-object-lambda:RestoreObject').
+action('s3-object-lambda:WriteGetObjectResponse').
+action('s3:ObjectOwnerOverrideToBucketOwner').
+action('s3:PutAccelerateConfiguration').
+action('s3:PutAccessPointConfigurationForObjectLambda').
+action('s3:PutAccessPointPolicy').
+action('s3:PutAccessPointPolicyForObjectLambda').
+action('s3:PutAccessPointPublicAccessBlock').
+action('s3:PutAccountPublicAccessBlock').
+action('s3:PutAnalyticsConfiguration').
+action('s3:PutBucketAcl').
+action('s3:PutBucketCORS').
+action('s3:PutBucketLogging').
+action('s3:PutBucketNotification').
+action('s3:PutBucketObjectLockConfiguration').
+action('s3:PutBucketOwnershipControls').
+action('s3:PutBucketPolicy').
+action('s3:PutBucketPublicAccessBlock').
+action('s3:PutBucketRequestPayment').
+action('s3:PutBucketTagging').
+action('s3:PutBucketVersioning').
+action('s3:PutBucketWebsite').
+action('s3:PutEncryptionConfiguration').
+action('s3:PutIntelligentTieringConfiguration').
+action('s3:PutInventoryConfiguration').
+action('s3:PutJobTagging').
+action('s3:PutLifecycleConfiguration').
+action('s3:PutMetricsConfiguration').
+action('s3:PutMultiRegionAccessPointPolicy').
+action('s3:PutObject').
+action('s3:PutObjectAcl').
+action('s3:PutObjectLegalHold').
+action('s3:PutObjectRetention').
+action('s3:PutObjectTagging').
+action('s3:PutObjectVersionAcl').
+action('s3:PutObjectVersionTagging').
+action('s3:PutReplicationConfiguration').
+action('s3:PutStorageLensConfiguration').
+action('s3:PutStorageLensConfigurationTagging').
+action('s3:ReplicateDelete').
+action('s3:ReplicateObject').
+action('s3:ReplicateTags').
+action('s3:RestoreObject').
+action('s3:SubmitMultiRegionAccessPointRoutes').
+action('s3:UpdateJobPriority').
+action('s3:UpdateJobStatus').

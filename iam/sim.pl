@@ -1,16 +1,26 @@
-:- module(iamsim, [action/1, can/2, all/2, why/3, fix/3, policy/5, policy_match/7]).
-:- dynamic(action/1).
-:- dynamic(policy/5).
+:- module(iamsim, [
+                   action/1,
+                   can/2,
+                   all/2,
+                   why/3,
+                   fix/3,
+                   policy/5,
+                   policy_add/5,
+                   policy_remove/5,
+                   policy_match/7
+                  ]).
 
-% DCG to match strings to patterns containing the wildcard *
-patt([])       --> [].
-patt([C|Cs])   --> char(C), patt(Cs).
-patt(['*'|Cs]) --> word, chrs(Cs).
-chrs([])       --> [].
-chrs([C|Cs])   --> char(C), patt(Cs).
-char(C)        --> [C], { char_type(C, graph) }.
-word           --> char(_), (word | empt).
-empt           --> [].
+:- use_module(library(lists), [append/3]).
+:- use_module('wildcard', [patt//1]).
+
+:- dynamic(policy/5).
+:- dynamic(action/1).
+
+policy_add(A,B,C,D,E) :-
+  assertz(policy(A,B,C,D,E)).
+
+policy_remove(A,B,C,D,E) :-
+   retractall(policy(A,B,C,D,E)).
 
 policy_match(Ty, Id, Ef, Ac, Re, Ax, Rx) :-
   policy(Ty, Id, Ef, Ax, Rx),
@@ -21,25 +31,11 @@ policy_match(Ty, Id, Ef, Ac, Re, Ax, Rx) :-
   phrase(patt(As), Al),
   phrase(patt(Rs), Rl).
 
-match([], []).
-match(['*'|RestPattern], String) :-
-  match_star(RestPattern, String).
-match([Char|RestPattern], [Char|RestString]) :-
-  match(RestPattern, RestString).
-
-match_star(Pattern, RestString) :-
-  match(Pattern, RestString).
-match_star(Pattern, [_|RestString]) :-
-  match_star(Pattern, RestString).
-
-list_empty([], true).
-list_empty([_|_], false).
-
 list_not_empty([], false).
 list_not_empty([_|_], true).
 
 error(Msg) :-
-  write(user_error, Msg), nl(user_error), fail.
+  write(user_error, Msg), nl(user_error), false.
 
 can(Action, Resource) :-
   action(Action),
@@ -61,22 +57,28 @@ why(Action, Resource, Reasons) :-
 eval(Ctx, IsOk, Reasons) :-
   context(_, _, Perms) = Ctx,
   eval(Perms, true, [], [], IsOk, OkReasons, NotOkReasons),
-  ((IsOk, Reasons = OkReasons);
-   (not(IsOk), Reasons = NotOkReasons)).
+  (   IsOk ->
+      Reasons = OkReasons
+  ;   Reasons = NotOkReasons
+  ).
 
 eval([], IsOk, OkReasons, NotOkReasons, IsOk, OkReasons, NotOkReasons).
 eval([P|Ps], AccBool, AccOkReasons, AccNotOkReasons, IsOk, OkReasons, NotOkReasons) :-
   eval_perm(P, OkP, ReasonP),
   and(AccBool, OkP, NewAccBool),
-  ((OkP, eval(Ps, NewAccBool, [ReasonP|AccOkReasons], AccNotOkReasons, IsOk, OkReasons, NotOkReasons));
-  (not(OkP), eval(Ps, NewAccBool, AccOkReasons, [ReasonP|AccNotOkReasons], IsOk, OkReasons, NotOkReasons))).
+  (   OkP ->
+      eval(Ps, NewAccBool, [ReasonP|AccOkReasons], AccNotOkReasons, IsOk, OkReasons, NotOkReasons)
+  ;   eval(Ps, NewAccBool, AccOkReasons, [ReasonP|AccNotOkReasons], IsOk, OkReasons, NotOkReasons)
+  ).
 
 and(B1, B2, B3) :-
-  (B1, B2, B3 = true);
-  ((not(B1);not(B2)),B3 = fail).
+  (   B1, B2 ->
+      B3 = true
+  ;   B3 = false
+  ).
 
 eval_perm(whitelist([], T), IsOk, Reason) :-
-  IsOk = fail,
+  IsOk = false,
   join(['Not explicitly allowed by', T], ' ', Reason).
 
 eval_perm(whitelist([P|Ps], T), IsOk, Reason) :-
@@ -90,7 +92,7 @@ eval_perm(blacklist([], T), IsOk, Reason) :-
   join(['Not explicitly denied by', T], ' ', Reason).
 
 eval_perm(blacklist([P|Ps], T), IsOk, Reason) :-
-  IsOk = fail,
+  IsOk = false,
   policy_sids([P|Ps], [], Sids),
   join(Sids, ',', SidStr),
   join(['Denied by', T, ':', SidStr], ' ', Reason).
@@ -132,8 +134,10 @@ context_build(Ac, Re, Ctx) :-
   C = blacklist(Bdenies,boundary),
   D = whitelist(Ballows,boundary),
   list_not_empty(Boundaries, HasBoundaries),
-  ((HasBoundaries, Ctx = context(Ac, Re, [A, B, C, D]));
-   (not(HasBoundaries), Ctx = context(Ac, Re, [A, B]))).
+  (   HasBoundaries ->
+      Ctx = context(Ac, Re, [A, B, C, D])
+  ;   Ctx = context(Ac, Re, [A, B])
+  ).
 
 fix(Action, Resource, Changes) :-
   ( var(Resource), !, error('Resource must be ground'));
