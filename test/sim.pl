@@ -19,6 +19,18 @@ test("arn_match", (
   arn_match(star, ResourceArn)),
   true).
 
+test("service_match", (
+  PolicyArn = arn("aws","s3","","","*"),
+  service_match("s3:PutObject", PolicyArn),
+  service_match("*", PolicyArn),
+  service_match("*", star),
+  service_match("s3:PutObject", star),
+  (   service_match("dynamodb:GetItem", PolicyArn) ->
+      false
+  ;   true
+  )),
+  true).
+
 test("all-except-denied", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",

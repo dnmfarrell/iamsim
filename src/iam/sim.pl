@@ -9,7 +9,8 @@
                     policy/5,
                     policy_add/5,
                     policy_remove/5,
-                    policy_match/7
+                    policy_match/7,
+                    service_match/2
                    ]).
 
 :- use_module(library(format), [format_//2]).
@@ -30,7 +31,22 @@ policy_add(Type,Id,Effect,Action,ArnStr) :-
   ;   list_empty(Action) ->
       error("Requires a policy action string")
   ;   (   arn_or_star(ArnStr, ArnOrStar),
+          service_match(Action, ArnOrStar),
           assertz(policy(Type,Id,Effect,Action,ArnOrStar))
+      )
+  ).
+
+% Verifies the service in a policy action ("s3:..") matches the service
+% in the policy ARN. Either can be wildcards, which always match.
+service_match(Action, ArnOrStar) :-
+  (   Action = "*" ->
+      true
+  ;   ArnOrStar = star ->
+      true
+  ;   (   ArnOrStar = arn(_,Service,_,_,_),
+          append(Service, _, Action) ->
+          true
+      ;   error("Service in action does not match the service in ARN")
       )
   ).
 
