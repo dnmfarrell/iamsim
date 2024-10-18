@@ -14,18 +14,18 @@ test("all-no-policies", (
 test("arn_match", (
   PolicyArn = arn("aws","s3","","","*"),
   ResourceArn = arn("aws","s3","","","foo"),
-  arn_match(PolicyArn, ResourceArn),
+  iam_sim:arn_match(PolicyArn, ResourceArn),
   % star matches everything
-  arn_match(star, ResourceArn)),
+  iam_sim:arn_match(star, ResourceArn)),
   true).
 
 test("service_match", (
   PolicyArn = arn("aws","s3","","","*"),
-  service_match("s3:PutObject", PolicyArn),
-  service_match("*", PolicyArn),
-  service_match("*", star),
-  service_match("s3:PutObject", star),
-  (   service_match("dynamodb:GetItem", PolicyArn) ->
+  iam_sim:service_match("s3:PutObject", PolicyArn),
+  iam_sim:service_match("*", PolicyArn),
+  iam_sim:service_match("*", star),
+  iam_sim:service_match("s3:PutObject", star),
+  (   iam_sim:service_match("dynamodb:GetItem", PolicyArn) ->
       false
   ;   true
   )),

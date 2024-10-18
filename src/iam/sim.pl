@@ -1,16 +1,11 @@
 :- module(iam_sim, [
                     action/1,
-                    arn_match/2,
-                    arn_parse/2,
-                    can/2,
                     all/2,
-                    why/3,
+                    can/2,
                     fix/3,
-                    policy/5,
                     policy_add/5,
                     policy_remove/5,
-                    policy_match/7,
-                    service_match/2
+                    why/3
                    ]).
 
 :- use_module(library(format), [format_//2]).
@@ -18,8 +13,8 @@
 :- use_module('../wildcard', [patt//1]).
 :- use_module('arn', [arn//1]).
 
-:- dynamic(policy/5).
 :- dynamic(action/1).
+:- dynamic(policy/5).
 
 policy_add(Type,Id,Effect,Action,ArnStr) :-
   (   policy_type_invalid(Type) ->
