@@ -1,47 +1,55 @@
-:- module(iam_sim, [
-                    action/1,
-                    all/2,
-                    can/2,
-                    fix/3,
-                    policy_add/5,
-                    policy_remove/5,
-                    why/3
-                   ]).
+:- dynamic(action/1).
+:- dynamic(policy/5).
 
 :- use_module(library(format), [format_//2]).
 :- use_module(library(lists), [append/3]).
 :- use_module('../wildcard', [patt//1]).
 :- use_module('arn', [arn//1]).
+:- use_module('s3').
 
-:- dynamic(action/1).
-:- dynamic(policy/5).
-
-policy_add(Type,Id,Effect,Action,ArnStr) :-
+policy_add(Type,Id,Effect,Action,ArnStr, Errs) :-
+  As = [],
   (   policy_type_invalid(Type) ->
-      error("Policy type must be one of: identity, boundary")
-  ;   list_empty(Id) ->
-      error("Requires a policy id string")
-  ;   policy_effect_invalid(Effect) ->
-      error("Policy effect must be one of: allow, deny")
-  ;   list_empty(Action) ->
-      error("Requires a policy action string")
-  ;   (   arn_or_star(ArnStr, ArnOrStar),
-          service_match(Action, ArnOrStar),
-          assertz(policy(Type,Id,Effect,Action,ArnOrStar))
+      Bs = ["Policy type must be one of: identity, boundary"| As]
+  ;   Bs = As
+  ),
+  (   list_empty(Id) ->
+      Cs = ["Requires a policy id string"|Bs]
+  ;   Cs = Bs
+  ),
+  (   policy_effect_invalid(Effect) ->
+      Ds = ["Policy effect must be one of: allow, deny"|Cs]
+  ;   Ds = Cs
+  ),
+  (   list_empty(Action) ->
+      Es = ["Requires a policy action string"|Ds]
+  ;   Es = Ds
+  ),
+  (   arn_or_star(ArnStr, ArnOrStar, ArnErrs) ->
+      append(ArnErrs, Es, Fs),
+      service_match(Action, ArnOrStar, Err),
+      append(Err, Fs, Gs)
+  ;   Gs = ["ARN is an invalid format"|Es]
+  ),
+  (   Gs = [] ->
+      (   assertz(policy(Type,Id,Effect,Action,ArnOrStar)) ->
+          Errs = []
+      ;   Errs = ["Unknown error adding policy"]
       )
+  ;   Errs = Gs
   ).
 
 % Verifies the service in a policy action ("s3:..") matches the service
 % in the policy ARN. Either can be wildcards, which always match.
-service_match(Action, ArnOrStar) :-
+service_match(Action, ArnOrStar, Err) :-
   (   Action = "*" ->
-      true
+      Err = []
   ;   ArnOrStar = star ->
-      true
+      Err = []
   ;   (   ArnOrStar = arn(_,Service,_,_,_),
           append(Service, _, Action) ->
-          true
-      ;   error("Service in action does not match the service in ARN")
+          Err = []
+      ;   Err = "Service in action does not match the service in ARN"
       )
   ).
 
@@ -86,7 +94,7 @@ error(Msg) :-
 
 can(Action, ArnStr) :-
   action(Action),
-  context_build(Action, ArnStr, Ctx),
+  context_build(Action, ArnStr, Ctx, _),
   eval(Ctx, IsOk, _),
   IsOk.
 
@@ -101,7 +109,7 @@ why(Action, ArnStr, Reasons) :-
   (   var(ArnStr) ->
       error('ArnStr must be ground')
   ;   (   action(Action),
-          context_build(Action, ArnStr, Ctx),
+          context_build(Action, ArnStr, Ctx, _),
           eval(Ctx, _, Reasons)
       )
   ).
@@ -153,17 +161,31 @@ policy_sids([], Sids, Sids).
 policy_sids([policy(_,Sid,_,_,_)|Ps], Acc, Sids) :-
   policy_sids(Ps, [Sid|Acc], Sids).
 
-arn_or_star(ArnStr, Arn) :-
+arn_or_star(ArnStr, Arn, Errs) :-
   (   ArnStr = "*" ->
-      Arn = star
-  ;   arn_parse(ArnStr, Arn)
+      Arn = star,
+      Errs = []
+  ;   arn_parse(ArnStr, Arn, Errs)
   ).
 
-arn_parse(ArnStr, Arn) :-
+arn_parse(ArnStr, Arn, Errs) :-
   (   nonvar(ArnStr), once(phrase(arn(Arn), ArnStr)) ->
-      true
-  ;   error('Failed to parse ARN')
+      setof(Es, arn_verify(Arn, Es), ErrList),
+      list_flatten(ErrList, Errs)
+  ;   Errs = ["Failed to parse ARN"]
   ).
+
+% Service modules can define additional rules to apply specific ARN rules.
+:- multifile(arn_verify/2).
+arn_verify(_, []).
+
+list_flatten(As, Bs) :-
+  list_flatten(As, [], Bs).
+
+list_flatten([], Acc, Acc).
+list_flatten([A|As], Acc, Bs) :-
+  append(Acc, A, Acc2),
+  list_flatten(As, Acc2, Bs).
 
 list_join(As, Bs) :-
   list_join(As, ',', [], Bs).
@@ -175,8 +197,8 @@ list_join([A|As],Sep,[B|Bs],Res) :-
   append([B|Bs], [Sep|A], Acc),
   list_join(As, Sep, Acc, Res).
 
-context_build(Ac, ArnStr, Ctx) :-
-  arn_parse(ArnStr, RArn),
+context_build(Ac, ArnStr, Ctx, Errs) :-
+  arn_parse(ArnStr, RArn, Errs),
   findall(policy(identity, Id, deny, Ax, Rx), policy_match(identity, Id,  deny, Ac, RArn, Ax, Rx), Denies),
   findall(policy(identity, Id, allow, Ax, Rx), policy_match(identity, Id, allow, Ac, RArn, Ax, Rx), Allows),
   findall(policy(boundary, Id, deny, Ax, Rx), policy_match(boundary, Id,  deny, Ac, RArn, Ax, Rx), Bdenies),
@@ -197,7 +219,7 @@ fix(Action, ArnStr, Changes) :-
   ;   var(ArnStr) ->
       error('ArnStr must be ground')
   ;   (   action(Action),
-          context_build(Action, ArnStr, Ctx),
+          context_build(Action, ArnStr, Ctx, _),
           Ctx = context(_, _, Ps),
           fix(Action, ArnStr, Ps, [], Changes)
       )
@@ -207,7 +229,7 @@ fix(_, _, [], Changes, Changes).
 
 fix(A, ArnStr, [whitelist([], Type)| Ps], Acc, Changes) :-
   phrase(format_("~q ~q ~q", [A,ArnStr,allow]), Id),
-  policy_add(Type, Id, allow, A, ArnStr),
+  policy_add(Type, Id, allow, A, ArnStr, _),
   U = changelog(add, policy(Type, Id, allow, A, ArnStr)),
   fix(A, ArnStr, Ps, [U|Acc], Changes).
 

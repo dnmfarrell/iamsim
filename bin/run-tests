@@ -1,5 +1,5 @@
 #!/bin/sh
 set -x
 for t in test/*;do
-	scryer-prolog -f "$t" 2>/dev/null
+	scryer-prolog -f "$t"
 done

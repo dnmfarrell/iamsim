@@ -1,4 +1,108 @@
-:- module(iam_s3, [action/1]).
+:- use_module(library(between)).
+:- use_module(library(clpz)).
+:- use_module(library(dcgs)).
+:- use_module(library(dif)).
+:- use_module(library(lists)).
+
+% S3 specific Arn rules.
+:- multifile(arn_verify/2).
+arn_verify(Arn, Err) :-
+  arn(_,Service,Region, AccId, Resource) = Arn,
+  (   Service = "s3" ->
+      (   Region = "" ->
+          As = []
+      ;   As = ["Region not empty"]
+      ),
+      (   AccId = "" ->
+          Bs = As
+      ;   Bs = ["AccountID not empty"|As]
+      ),
+      (   ground(Resource), phrase(resource, Resource) ->
+          Cs = Bs
+      ;   Cs = ["Resource is invalid"| Bs]
+      ),
+      Err = Cs
+  ;   Err = []
+  ).
+
+eos([],[]).
+pop([_|As],As).
+take(N,Src,L) :- findall(E, (nth1(I,Src,E), I =< N), L).
+
+resource     --> bucket_w_obj|bucket.
+bucket       --> call(prefix_ok), call(suffix_ok), bucket_name.
+bucket_w_obj --> call(prefix_ok), call(suffix_w_obj), bucket_name, object.
+
+object -->
+  (   parsing ->
+      object_utf8
+  ;   object_safe
+  ).
+
+parsing, [C] --> [C], { nonvar(C) }.
+bucket_name  --> bucket_init, bucket_chrs, call(pop).
+object_safe  --> object_init, safe_chars, call(pop).
+object_utf8  --> object_init, utf8_points, call(pop).
+
+object_init, [1]  --> "/".
+object_term, [L]  --> [L], call(eos).
+safe_chars        --> safe_char, (safe_chars|object_term).
+safe_char, [M]    --> [L], { L #< 1024, M #= L + 1 }, (alnum|safe_symbol).
+utf8_points    --> utf8_point, (utf8_points|object_term).
+utf8_point, [M]--> [L], [A], {
+  L #< 1024,
+  char_code(A, D),
+  ccode(D),
+  M #= L + 1 }.
+
+ccode(Code) :- between(0, 0xD7FF, Code).
+ccode(Code) :- between(0xE000, 0x10FFFF, Code).
+
+prefix_ok(A, A) :-
+  take(13, A, B), dif(B, "amzn-s3-demo-"),
+  take( 6, A, C), dif(C, "sthree"),
+  take( 4, A, D), dif(D, "xn--"),
+  !.
+
+suffix_ok(A,A) :-
+  B=[1,2,3,4,5,6,7,8|A], % minimum to match our not_ rules
+  phrase((...,not_ols3,call(eos)), B),
+  phrase((...,not_xs3,call(eos)), B),
+  phrase((...,not_s3alias,call(eos)), B),
+  phrase((...,not_mrap,call(eos)), B),
+  !.
+
+suffix_w_obj(A,A) :-
+  B=[1,2,3,4,5,6,7,8|A], % minimum to match our not_ rules
+  phrase((...,not_ols3,"/",...), B),
+  phrase((...,not_xs3,"/",...), B),
+  phrase((...,not_s3alias,"/",...), B),
+  phrase((...,not_mrap,"/",...), B),
+  !.
+
+not_mrap    --> [A,B,C,D,E], { dif([A,B,C,D,E], ".mrap") }.
+not_xs3     --> [A,B,C,D,E,F], { dif([A,B,C,D,E,F], "--x-s3") }.
+not_ols3    --> [A,B,C,D,E,F,G], { dif([A,B,C,D,E,F,G], "--ol-s3") }.
+not_s3alias --> [A,B,C,D,E,F,G,H], { dif([A,B,C,D,E,F,G,H], "-s3alias") }.
+
+bucket_init, [0]  --> [].
+bucket_chrs       --> char_alnum, bucket_midl, char_alnum.
+bucket_midl       --> (char_alnumhyp, (bucket_midl|[]))|(char_dot, midl_dot).
+midl_dot          --> char_alnumhyp, (bucket_midl|[]).
+midl_dot          --> [].
+char_alnum, [L1]  --> [L], alnum,  { L #< 63, L1 #= L + 1 }.
+char_alnumhyp, [L1]  --> [L], alnumhyp,  { L #< 63, L1 #= L + 1 }.
+char_dot, [L1]  --> [L], ".",    { L #< 63, L1 #= L + 1 }.
+char_anyof, [L1]  --> [L], alnumhypdot, { L #< 63, L1 #= L + 1 }.
+alnum             --> upper | lower | digit.
+alnumhyp          --> alnum | hyphen.
+alnumhypdot       --> alnumhyp | dot.
+upper             --> [C], { memberchk(C, "ABCDEFGHIJKLMNOPQRSTUVWXYZ") }.
+lower             --> [C], { memberchk(C, "abcdefghijklmnopqrstuvwxyz") }.
+digit             --> [C], { memberchk(C, "0123456789") }.
+hyphen            --> [-].
+dot               --> [.].
+safe_symbol       --> [C], { memberchk(C, "!-_.*\\()") }.
 
 :- dynamic(action/1).
 action("s3:AbortMultipartUpload").

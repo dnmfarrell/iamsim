@@ -2,95 +2,100 @@
 :- use_module(library(dcgs)).
 :- use_module(library(format)).
 :- use_module('../src/iam/sim').
-:- use_module('../src/iam/s3').
-
-:- dynamic(policy/5).
 
 test("all-no-policies", (
   Arn = "arn:aws:s3:::foo",
-  all_denied(Arn)),
-  true).
+  all_denied(Arn),
+  true),true).
 
 test("arn_match", (
   PolicyArn = arn("aws","s3","","","*"),
   ResourceArn = arn("aws","s3","","","foo"),
-  iam_sim:arn_match(PolicyArn, ResourceArn),
+  arn_match(PolicyArn, ResourceArn),
   % star matches everything
-  iam_sim:arn_match(star, ResourceArn)),
-  true).
+  arn_match(star, ResourceArn),
+  true),true).
+
+test("arn_parse", (
+  Ec2ArnStr = "arn:aws:ec2:us-east-1:123456789012:*",
+  arn_parse(Ec2ArnStr, arn("aws","ec2","us-east-1","123456789012","*"),[]),
+  arn_parse("arn:aws:s3:::foo",arn("aws","s3","","","foo"), []),
+  S3InvalidArn = "aws:ec2:us-east-1::foo",
+  % the s3 parser fails it on a non-empty region
+  arn_parse(S3InvalidArn,arn("aws","s3","us-east-1","","*"), [_]),
+  true),true).
 
 test("service_match", (
   PolicyArn = arn("aws","s3","","","*"),
-  iam_sim:service_match("s3:PutObject", PolicyArn),
-  iam_sim:service_match("*", PolicyArn),
-  iam_sim:service_match("*", star),
-  iam_sim:service_match("s3:PutObject", star),
-  (   iam_sim:service_match("dynamodb:GetItem", PolicyArn) ->
-      false
-  ;   true
-  )),
-  true).
+  service_match("s3:PutObject", PolicyArn, []),
+  service_match("*", PolicyArn, []),
+  service_match("*", star, []),
+  service_match("s3:PutObject", star, []),
+
+  % fails because dynamodb \= s3
+  service_match("dynamodb:GetItem", PolicyArn, [_|_]),
+  true),true).
 
 test("all-except-denied", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"*","*"),
-  policy_add(identity,"foo-s3",deny,Action,Arn),
+  policy_add(identity,"foo-s3",allow,"*","*", []),
+  policy_add(identity,"foo-s3",deny,Action,Arn, []),
   setof(A, action_except(Action, A), Expected),
   all(Allowed,Arn),
-  Allowed = Expected),
-  retract_policies).
+  Allowed = Expected,
+  true),retract_policies).
 
 test("all-deny-beats-allow", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3-putobject",allow,Action,Arn),
-  policy_add(identity,"foo-s3-putobject",deny,Action,Arn),
-  all_denied(Arn)),
-  retract_policies).
+  policy_add(identity,"foo-s3-putobject",allow,Action,Arn, []),
+  policy_add(identity,"foo-s3-putobject",deny,Action,Arn, []),
+  all_denied(Arn),
+  true),retract_policies).
  
 test("all-boundary-implicit-deny", (
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"s3:PutObject",Arn),
-  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn),
-  all_denied(Arn)),
-  retract_policies).
+  policy_add(identity,"foo-s3",allow,"s3:PutObject",Arn, []),
+  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn, []),
+  all_denied(Arn),
+  true),retract_policies).
 
 test("all-boundary-explicit-deny", (
   Action = "s3:GetObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,Action,Arn),
-  policy_add(boundary,"foo-s3",deny,Action,Arn),
-  all_denied(Arn)),
-  retract_policies).
+  policy_add(identity,"foo-s3",allow,Action,Arn, []),
+  policy_add(boundary,"foo-s3",deny,Action,Arn, []),
+  all_denied(Arn),
+  true),retract_policies).
 
 test("fix-no-policies", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
   setof(Changes, fix(Action, Arn, Changes), _),
   all(Allowed, Arn),
-  Allowed = [Action]),
-  retract_policies).
+  Allowed = [Action],
+  true),retract_policies).
 
 test("fix-boundary-implicit-deny", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,Action,Arn),
-  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn),
+  policy_add(identity,"foo-s3",allow,Action,Arn, []),
+  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn, []),
   setof(Changes, fix(Action, Arn, Changes), _),
   all(Allowed, Arn),
-  Allowed = [Action]),
-  retract_policies).
+  Allowed = [Action],
+  true),retract_policies).
 
 test("fix-explicit-deny", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",deny,Action,Arn),
-  policy_add(boundary,"foo-s3",deny,Action,Arn),
+  policy_add(identity,"foo-s3",deny,Action,Arn, []),
+  policy_add(boundary,"foo-s3",deny,Action,Arn, []),
   setof(Changes, fix(Action, Arn, Changes), _),
   all(Allowed, Arn),
-  Allowed = [Action]),
-  retract_policies).
+  Allowed = [Action],
+  true),retract_policies).
 
 retract_policies :-
    policy_remove(_,_,_,_,_).
