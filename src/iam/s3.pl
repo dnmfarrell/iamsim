@@ -1,3 +1,5 @@
+:- dynamic(action/1).
+:- set_prolog_flag(double_quotes, chars).
 :- use_module(library(between)).
 :- use_module(library(clpz)).
 :- use_module(library(dcgs)).
@@ -104,7 +106,6 @@ hyphen            --> [-].
 dot               --> [.].
 safe_symbol       --> [C], { memberchk(C, "!-_.*\\()") }.
 
-:- dynamic(action/1).
 action("s3:AbortMultipartUpload").
 action("s3:BypassGovernanceRetention").
 action("s3:CreateAccessPoint").

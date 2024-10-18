@@ -42,7 +42,7 @@ test("all-except-denied", (
   policy_add(identity,"foo-s3",allow,"*","*", []),
   policy_add(identity,"foo-s3",deny,Action,Arn, []),
   setof(A, action_except(Action, A), Expected),
-  all(Allowed,Arn),
+  all(Allowed,Arn, []),
   Allowed = Expected,
   true),retract_policies).
 
@@ -72,8 +72,8 @@ test("all-boundary-explicit-deny", (
 test("fix-no-policies", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  setof(Changes, fix(Action, Arn, Changes), _),
-  all(Allowed, Arn),
+  setof(Changes, fix(Action, Arn, Changes, []), _),
+  all(Allowed, Arn, []),
   Allowed = [Action],
   true),retract_policies).
 
@@ -82,8 +82,8 @@ test("fix-boundary-implicit-deny", (
   Arn = "arn:aws:s3:::foo",
   policy_add(identity,"foo-s3",allow,Action,Arn, []),
   policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn, []),
-  setof(Changes, fix(Action, Arn, Changes), _),
-  all(Allowed, Arn),
+  setof(Changes, fix(Action, Arn, Changes, []), _),
+  all(Allowed, Arn, []),
   Allowed = [Action],
   true),retract_policies).
 
@@ -92,16 +92,16 @@ test("fix-explicit-deny", (
   Arn = "arn:aws:s3:::foo",
   policy_add(identity,"foo-s3",deny,Action,Arn, []),
   policy_add(boundary,"foo-s3",deny,Action,Arn, []),
-  setof(Changes, fix(Action, Arn, Changes), _),
-  all(Allowed, Arn),
+  setof(Changes, fix(Action, Arn, Changes, []), _),
+  all(Allowed, Arn, []),
   Allowed = [Action],
   true),retract_policies).
 
 retract_policies :-
-   policy_remove(_,_,_,_,_).
+   policy_remove(_,_,_,_,_,_).
 
 all_denied(Arn) :-
-  all(Allowed,Arn),
+  all(Allowed,Arn,[]),
   [] = Allowed.
 
 action_except(A, B) :-
