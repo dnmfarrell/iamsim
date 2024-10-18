@@ -29,8 +29,8 @@ policy_add(Type,Id,Effect,Action,ArnStr) :-
       error("Policy effect must be one of: allow, deny")
   ;   list_empty(Action) ->
       error("Requires a policy action string")
-  ;   (   arn_parse(ArnStr, Arn),
-          assertz(policy(Type,Id,Effect,Action,Arn))
+  ;   (   arn_or_star(ArnStr, ArnOrStar),
+          assertz(policy(Type,Id,Effect,Action,ArnOrStar))
       )
   ).
 
@@ -46,10 +46,13 @@ policy_type_invalid(Type) :-
 policy_remove(A,B,C,D,E) :-
    retractall(policy(A,B,C,D,E)).
 
-policy_match(Ty, Id, Ef, Action, Arn, PAction, PArn) :-
-  policy(Ty, Id, Ef, PAction, PArn),
+policy_match(Ty, Id, Ef, Action, Arn, PAction, ArnOrStar) :-
+  policy(Ty, Id, Ef, PAction, ArnOrStar),
   phrase(patt(PAction), Action),
-  arn_match(PArn, Arn).
+  arn_match(ArnOrStar, Arn).
+
+% A star matches any ARN.
+arn_match(star, _).
 
 % match an ARN to a policy ARN. The policy ARN's resource part can contain
 % wildcards and placeholders for a pattern match.
@@ -138,6 +141,12 @@ eval_perm(blacklist([P|Ps], Type), IsOk, Reason) :-
 policy_sids([], Sids, Sids).
 policy_sids([policy(_,Sid,_,_,_)|Ps], Acc, Sids) :-
   policy_sids(Ps, [Sid|Acc], Sids).
+
+arn_or_star(ArnStr, Arn) :-
+  (   ArnStr = "*" ->
+      Arn = star
+  ;   arn_parse(ArnStr, Arn)
+  ).
 
 arn_parse(ArnStr, Arn) :-
   (   nonvar(ArnStr), once(phrase(arn(Arn), ArnStr)) ->

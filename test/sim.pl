@@ -14,13 +14,15 @@ test("all-no-policies", (
 test("arn_match", (
   PolicyArn = arn("aws","s3","","","*"),
   ResourceArn = arn("aws","s3","","","foo"),
-  arn_match(PolicyArn, ResourceArn)),
+  arn_match(PolicyArn, ResourceArn),
+  % star matches everything
+  arn_match(star, ResourceArn)),
   true).
 
 test("all-except-denied", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"*",Arn),
+  policy_add(identity,"foo-s3",allow,"*","*"),
   policy_add(identity,"foo-s3",deny,Action,Arn),
   setof(A, action_except(Action, A), Expected),
   all(Allowed,Arn),
