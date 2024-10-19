@@ -46,6 +46,15 @@ test("all-except-denied", (
   Allowed = Expected,
   true),retract_policies).
 
+test("all-no-duplicates", (
+  Arn = "arn:aws:s3:::foo",
+  policy_add(identity,"foo-s3",allow,"*","*", []),
+  policy_add(identity,"foo-s3",allow,"s3:GetObject",Arn, []),
+  setof(A, action(A), Expected),
+  all(Allowed,Arn, []),
+  Allowed = Expected,
+  true),retract_policies).
+
 test("all-deny-beats-allow", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",

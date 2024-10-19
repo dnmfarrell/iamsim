@@ -94,7 +94,7 @@ list_not_empty([_]).
 all(Actions, ArnStr, Errs) :-
   arn_parse(ArnStr,Arn,Errs),
   (   Errs = [],
-      setof(Action, (action(Action), can_arn(Action,Arn,true,_)), Actions)
+      setof(Action, Reasons^(action(Action), can_arn(Action,Arn,true,Reasons)), Actions)
   ;   Actions = []
   ).
 
