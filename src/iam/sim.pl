@@ -3,7 +3,7 @@
 :- use_module(library(format), [format_//2]).
 :- use_module(library(lists), [append/3, maplist/3]).
 :- use_module('../wildcard', [patt//1]).
-:- use_module('arn', [arn//1]).
+:- use_module('arn', [arn//1, arn_service//1]).
 :- use_module('s3').
 
 policy_add(Type,Id,Effect,Action,ArnStr, Errs) :-
@@ -24,19 +24,30 @@ policy_add(Type,Id,Effect,Action,ArnStr, Errs) :-
       Es = ["Requires a policy action string"|Ds]
   ;   Es = Ds
   ),
-  (   arn_or_star(ArnStr, ArnOrStar, ArnErrs) ->
-      append(ArnErrs, Es, Fs),
-      service_match(Action, ArnOrStar, Err),
-      append(Err, Fs, Gs)
-  ;   Gs = ["ARN is an invalid format"|Es]
+  (   phrase(policy_action,Action) ->
+      Fs = Es
+  ;   Fs = ["Invalid action string"|Es]
   ),
-  (   Gs = [] ->
+  (   arn_or_star(ArnStr, ArnOrStar, ArnErrs) ->
+      append(ArnErrs, Fs, Gs),
+      service_match(Action, ArnOrStar, Err),
+      append(Err, Gs, Hs)
+  ;   Hs = ["ARN is an invalid format"|Fs]
+  ),
+  (   Hs = [] ->
       (   assertz(policy(Type,Id,Effect,Action,ArnOrStar)) ->
           Errs = []
       ;   Errs = ["Unknown error adding policy"]
       )
-  ;   Errs = Gs
+  ;   Errs = Hs
   ).
+
+% A policy action string can be either "*" or "$service:$pattern".
+policy_action --> action_star | action_with_service(_).
+action_with_service(S) --> arn_service(S), ":", [_], any(_).
+action_star --> [*].
+any("") --> "".
+any([C|Cs]) --> [C], any(Cs).
 
 % Verifies the service in a policy action ("s3:..") matches the service
 % in the policy ARN. Either can be wildcards, which always match.
@@ -46,7 +57,8 @@ service_match(Action, ArnOrStar, Err) :-
   ;   ArnOrStar = star ->
       Err = []
   ;   (   ArnOrStar = arn(_,Service,_,_,_),
-          append(Service, _, Action) ->
+          phrase(action_with_service(ActionService), Action),
+          Service = ActionService ->
           Err = []
       ;   Err = "Service in action does not match the service in ARN"
       )

@@ -34,6 +34,8 @@ test("service_match", (
 
   % fails because dynamodb \= s3
   service_match("dynamodb:GetItem", PolicyArn, [_|_]),
+  % should fail because s3-lambda \= s3:
+  service_match("s3-object-lambda:*", PolicyArn, [_|_]),
   true),true).
 
 test("all-except-denied", (
