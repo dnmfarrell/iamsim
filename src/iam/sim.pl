@@ -6,7 +6,7 @@
 :- use_module('arn', [arn//1, arn_service//1]).
 :- use_module('s3').
 
-policy_add(Type,Id,Effect,Action,ArnStr, Errs) :-
+policy_add(Type,Id,Effect,Action,ArnStr,Errs) :-
   As = [],
   (   policy_type_invalid(Type) ->
       Bs = ["Policy type must be one of: identity, boundary"| As]
@@ -127,11 +127,10 @@ can(Action, ArnStr, Allowed, Reasons, Errs) :-
   ).
 
 can_arn(Action, Arn, Allowed, Reasons) :-
-  context_build(Action, Arn, Ctx),
-  eval(Ctx, Allowed, Reasons).
+  context_build(Action, Arn, Perms),
+  eval(Perms, Allowed, Reasons).
 
-eval(Ctx, IsOk, Reasons) :-
-  context(_, _, Perms) = Ctx,
+eval(Perms, IsOk, Reasons) :-
   eval(Perms, true, [], [], IsOk, OkReasons, NotOkReasons),
   (   IsOk ->
       Reasons = OkReasons
@@ -216,7 +215,7 @@ list_join([A|As],Sep,[B|Bs],Res) :-
   append([B|Bs], [Sep|A], Acc),
   list_join(As, Sep, Acc, Res).
 
-context_build(Ac, RArn, Ctx) :-
+context_build(Ac, RArn, Perms) :-
   findall(policy(identity, Id, deny, Ax, Rx), policy_match(identity, Id,  deny, Ac, RArn, Ax, Rx), Denies),
   findall(policy(identity, Id, allow, Ax, Rx), policy_match(identity, Id, allow, Ac, RArn, Ax, Rx), Allows),
   findall(policy(boundary, Id, deny, Ax, Rx), policy_match(boundary, Id,  deny, Ac, RArn, Ax, Rx), Bdenies),
@@ -227,8 +226,8 @@ context_build(Ac, RArn, Ctx) :-
   C = blacklist(Bdenies,boundary),
   D = whitelist(Ballows,boundary),
   (   list_not_empty(Boundaries) ->
-      Ctx = context(Ac, RArn, [A, B, C, D])
-  ;   Ctx = context(Ac, RArn, [A, B])
+      Perms = [A, B, C, D]
+  ;   Perms = [A, B]
   ).
 
 fix(Action, ArnStr, Changes, Errs) :-
@@ -240,36 +239,43 @@ fix(Action, ArnStr, Changes, Errs) :-
   append(Bs,As,Cs),
   (   Cs = [] ->
       (   action(Action) ->
-          context_build(Action, Arn, Ctx),
-          Ctx = context(_, _, Ps),
-          fix(Action, ArnStr, Ps, [], Changes, Errs)
-      ;   Errs = ["Action not found"]
+          context_build(Action, Arn, Perms),
+          fix(Action, ArnStr, Perms, [], Changes, Errs)
+      ;   Errs = ["Action not found"],
+          Changes = []
       )
-  ;   Errs = Cs
+  ;   Errs = Cs,
+      Changes = []
   ).
 
-fix(_, _, [], Changes, Changes, []).
+fix(_, _, [], Changes, Changes, _).
 
-fix(A, ArnStr, [whitelist([], Type)| Ps], Acc, Changes, Errs) :-
+fix(A, ArnStr, [P|Ps], Acc, Changes, Errs) :-
+  (   whitelist([], Type) = P ->
+      perms_grant(A, ArnStr, Type, Ps, Acc, Changes, Errs)
+  ;   blacklist([_|_], _) = P ->
+      perms_loosen(A, ArnStr, [P|Ps], Acc, Changes, Errs)
+  ;   fix(A, ArnStr, Ps, Acc, Changes, Errs)
+  ).
+
+perms_grant(A, ArnStr, Type, Ps, Acc, Changes, Errs) :-
   phrase(format_("~q ~q ~q", [A,ArnStr,allow]), Id),
   policy_add(Type, Id, allow, A, ArnStr, PolicyErrs),
   (   PolicyErrs = [] ->
       U = changelog(add, policy(Type, Id, allow, A, ArnStr)),
       fix(A, ArnStr, Ps, [U|Acc], Changes, Errs)
-  ;   Errs = PolicyErrs
+  ;   Errs = PolicyErrs,
+      Changes = []
   ).
 
-fix(A, ArnStr, [whitelist([_|_], _)| Ps], Acc, Changes, Errs) :-
-  fix(A, ArnStr, Ps, Acc, Changes, Errs).
-fix(A, ArnStr, [blacklist([], _)| Ps], Acc, Changes, Errs) :-
-  fix(A, ArnStr, Ps, Acc, Changes, Errs).
-fix(A, ArnStr, [blacklist([B|Bs], Type)| Ps], Acc, Changes, Errs) :-
+perms_loosen(A, ArnStr, [blacklist([B|Bs], Type)| Ps], Acc, Changes, Errs) :-
   policy(Type,Id,Effect,Action,Arn) = B,
   policy_remove(Type,Id,Effect,Action,Arn,PolicyErrs),
   (   PolicyErrs = [] ->
       U = changelog(del, B),
       fix(A, ArnStr, [blacklist(Bs, Type)|Ps], [U|Acc], Changes, Errs)
-  ;   Errs = PolicyErrs
+  ;   Errs = PolicyErrs,
+      Changes = []
   ).
 
 policy_type(identity).
