@@ -41,8 +41,8 @@ test("service_match", (
 test("all-except-denied", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"*","*", []),
-  policy_add(identity,"foo-s3",deny,Action,Arn, []),
+  policy_add(identity,"foo-s3",allow,["*"],"*", []),
+  policy_add(identity,"foo-s3",deny,[Action],Arn, []),
   setof(A, action_except(Action, A), Expected),
   all(Allowed,Arn, []),
   Allowed = Expected,
@@ -50,8 +50,8 @@ test("all-except-denied", (
 
 test("all-no-duplicates", (
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"*","*", []),
-  policy_add(identity,"foo-s3",allow,"s3:GetObject",Arn, []),
+  policy_add(identity,"foo-s3",allow,["*"],"*", []),
+  policy_add(identity,"foo-s3",allow,["s3:GetObject"],Arn, []),
   setof(A, action(A), Expected),
   all(Allowed,Arn, []),
   Allowed = Expected,
@@ -60,23 +60,23 @@ test("all-no-duplicates", (
 test("all-deny-beats-allow", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3-putobject",allow,Action,Arn, []),
-  policy_add(identity,"foo-s3-putobject",deny,Action,Arn, []),
+  policy_add(identity,"foo-s3-putobject",allow,[Action],Arn, []),
+  policy_add(identity,"foo-s3-putobject",deny,[Action],Arn, []),
   all_denied(Arn),
   true),retract_policies).
  
 test("all-boundary-implicit-deny", (
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,"s3:PutObject",Arn, []),
-  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn, []),
+  policy_add(identity,"foo-s3",allow,["s3:PutObject"],Arn, []),
+  policy_add(boundary,"foo-s3",allow,["s3:GetObject"],Arn, []),
   all_denied(Arn),
   true),retract_policies).
 
 test("all-boundary-explicit-deny", (
   Action = "s3:GetObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,Action,Arn, []),
-  policy_add(boundary,"foo-s3",deny,Action,Arn, []),
+  policy_add(identity,"foo-s3",allow,[Action],Arn, []),
+  policy_add(boundary,"foo-s3",deny,[Action],Arn, []),
   all_denied(Arn),
   true),retract_policies).
 
@@ -91,8 +91,8 @@ test("fix-no-policies", (
 test("fix-boundary-implicit-deny", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",allow,Action,Arn, []),
-  policy_add(boundary,"foo-s3",allow,"s3:GetObject",Arn, []),
+  policy_add(identity,"foo-s3",allow,[Action],Arn, []),
+  policy_add(boundary,"foo-s3",allow,["s3:GetObject"],Arn, []),
   setof(Changes, fix(Action, Arn, Changes, []), _),
   all(Allowed, Arn, []),
   Allowed = [Action],
@@ -101,8 +101,8 @@ test("fix-boundary-implicit-deny", (
 test("fix-explicit-deny", (
   Action = "s3:PutObject",
   Arn = "arn:aws:s3:::foo",
-  policy_add(identity,"foo-s3",deny,Action,Arn, []),
-  policy_add(boundary,"foo-s3",deny,Action,Arn, []),
+  policy_add(identity,"foo-s3",deny,[Action],Arn, []),
+  policy_add(boundary,"foo-s3",deny,[Action],Arn, []),
   setof(Changes, fix(Action, Arn, Changes, []), _),
   all(Allowed, Arn, []),
   Allowed = [Action],

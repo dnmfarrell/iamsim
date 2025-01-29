@@ -6,13 +6,13 @@
 :- use_module('arn', [arn//1, arn_service//1]).
 :- use_module('s3').
 
-policy_add(Type,Id,Effect,Action,ArnStr,Errs) :-
+policy_add(Type,Sid,Effect,Actions,ArnStr,Errs) :-
   As = [],
   (   policy_type_invalid(Type) ->
       Bs = ["Policy type must be one of: identity, boundary"| As]
   ;   Bs = As
   ),
-  (   list_empty(Id) ->
+  (   list_empty(Sid) ->
       Cs = ["Requires a policy id string"|Bs]
   ;   Cs = Bs
   ),
@@ -20,26 +20,36 @@ policy_add(Type,Id,Effect,Action,ArnStr,Errs) :-
       Ds = ["Policy effect must be one of: allow, deny"|Cs]
   ;   Ds = Cs
   ),
-  (   list_empty(Action) ->
+  (   list_empty(Actions) ->
       Es = ["Requires a policy action string"|Ds]
   ;   Es = Ds
   ),
-  (   phrase(policy_action,Action) ->
+  (   policy_action_list(Actions) ->
       Fs = Es
   ;   Fs = ["Invalid action string"|Es]
   ),
   (   arn_or_star(ArnStr, ArnOrStar, ArnErrs) ->
-      append(ArnErrs, Fs, Gs),
-      service_match(Action, ArnOrStar, Err),
-      append(Err, Gs, Hs)
+      append(ArnErrs, Fs, Hs)
   ;   Hs = ["ARN is an invalid format"|Fs]
   ),
   (   Hs = [] ->
-      (   assertz(policy(Type,Id,Effect,Action,ArnOrStar)) ->
+      (   add_statement_member(Type,Sid,Effect,Actions,ArnOrStar) ->
           Errs = []
       ;   Errs = ["Unknown error adding policy"]
       )
   ;   Errs = Hs
+  ).
+
+add_statement_member(_,_,_,[],_).
+add_statement_member(Type,Sid,Effect,[A|As],ArnOrStar) :-
+  assertz(policy(Type,Sid,Effect,A,ArnOrStar)),
+  add_statement_member(Type,Sid,Effect,As,ArnOrStar).
+
+policy_action_list([A|As]) :-
+  phrase(policy_action,A), !,
+  (   list_not_empty(As) ->
+      policy_action_list(As)
+  ;   true
   ).
 
 % A policy action string can be either "*" or "$service:$pattern".
@@ -260,7 +270,7 @@ fix(A, ArnStr, [P|Ps], Acc, Changes, Errs) :-
 
 perms_grant(A, ArnStr, Type, Ps, Acc, Changes, Errs) :-
   phrase(format_("~q ~q ~q", [A,ArnStr,allow]), Id),
-  policy_add(Type, Id, allow, A, ArnStr, PolicyErrs),
+  policy_add(Type, Id, allow, [A], ArnStr, PolicyErrs),
   (   PolicyErrs = [] ->
       U = changelog(add, policy(Type, Id, allow, A, ArnStr)),
       fix(A, ArnStr, Ps, [U|Acc], Changes, Errs)
