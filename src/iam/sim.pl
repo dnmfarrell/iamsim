@@ -6,7 +6,7 @@
 :- use_module('arn', [arn//1, arn_service//1]).
 :- use_module('s3').
 
-policy_add(Type,Sid,Effect,Actions,ArnStr,Errs) :-
+policy_add(Type,Sid,Effect,Actions,Arns,Errs) :-
   As = [],
   (   policy_type_invalid(Type) ->
       Bs = ["Policy type must be one of: identity, boundary"| As]
@@ -28,17 +28,23 @@ policy_add(Type,Sid,Effect,Actions,ArnStr,Errs) :-
       Fs = Es
   ;   Fs = ["Invalid action string"|Es]
   ),
-  (   arn_or_star(ArnStr, ArnOrStar, ArnErrs) ->
+  (   arns_or_stars(Arns, [], ArnsOrStars, ArnErrs) ->
       append(ArnErrs, Fs, Hs)
-  ;   Hs = ["ARN is an invalid format"|Fs]
+  ;   Hs = ["Unknown error parsing policy arns"|Fs]
   ),
   (   Hs = [] ->
-      (   add_statement_member(Type,Sid,Effect,Actions,ArnOrStar) ->
+      (   add_statement_members(Type,Sid,Effect,Actions,ArnsOrStars) ->
           Errs = []
       ;   Errs = ["Unknown error adding policy"]
       )
   ;   Errs = Hs
   ).
+
+% Asserts a policy for every action & arn.
+add_statement_members(_,_,_,_,[]).
+add_statement_members(Type,Sid,Effect,Actions,[Arn|As]) :-
+  add_statement_member(Type,Sid,Effect,Actions,Arn),
+  add_statement_members(Type,Sid,Effect,Actions,As).
 
 add_statement_member(_,_,_,[],_).
 add_statement_member(Type,Sid,Effect,[A|As],ArnOrStar) :-
@@ -186,6 +192,14 @@ policy_sids([], Sids, Sids).
 policy_sids([policy(_,Sid,_,_,_)|Ps], Acc, Sids) :-
   policy_sids(Ps, [Sid|Acc], Sids).
 
+arns_or_stars([], Acc, Acc, []).
+arns_or_stars([A|As], Acc, Arns, Errs) :-
+  arn_or_star(A, Arn, Errs),
+  (   Errs = [] ->
+      arns_or_stars(As,[Arn|Acc],Arns,Errs)
+  ;   true
+  ).
+
 arn_or_star(ArnStr, Arn, Errs) :-
   (   ArnStr = "*" ->
       Arn = star,
@@ -270,7 +284,7 @@ fix(A, ArnStr, [P|Ps], Acc, Changes, Errs) :-
 
 perms_grant(A, ArnStr, Type, Ps, Acc, Changes, Errs) :-
   phrase(format_("~q ~q ~q", [A,ArnStr,allow]), Id),
-  policy_add(Type, Id, allow, [A], ArnStr, PolicyErrs),
+  policy_add(Type, Id, allow, [A], [ArnStr], PolicyErrs),
   (   PolicyErrs = [] ->
       U = changelog(add, policy(Type, Id, allow, A, ArnStr)),
       fix(A, ArnStr, Ps, [U|Acc], Changes, Errs)
